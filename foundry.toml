@@ -4,4 +4,8 @@ out = "out"
 libs = ["lib"]
 remappings = ["@openzeppelin/contracts=lib/openzeppelin-contracts/contracts", "@forge/std=lib/forge-std/src"]
 
+[fuzz]
+runs = 256
+seed = "0x1"
+
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
