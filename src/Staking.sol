@@ -5,7 +5,7 @@ pragma solidity 0.8.20;
 /**
  * @title Staking Smart contract allows user to stake and earn reward token based on it.
  * @author Parth Sharma
- * @notice This contract code is not production ready now. We should have to conduct security reviews over the contract code.
+ * @notice To interact with protocol, you must deploy the code through anvil and test network and then run interaction script. This contract code is not production ready now. We should have to conduct security reviews over the contract code.
  */
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
@@ -17,13 +17,14 @@ contract Staking {
     error Staking__ShouldNotBeZero();
     error Staking__SetsTheDurationFirst();
     error Staking__CurrentlyNotStaking();
+    error Staking__DurationOutdated();
 
     ////////////// EVENTs //////////////
     event RewardsUpdated(uint256 amount);
     event DurationUpdated(uint256 duration);
     event AmountStaked(address indexed staker, uint256 amount);
     event Unstaked(address indexed staker, uint256 amount);
-    event RewardsClaimed(address indexed staker, uint256 amount);
+    event RewardsClaimed(address indexed staker, uint256 reward);
 
     ///////////// CONSTANTS AND IMMUTABLE /////////////////////
     address public immutable i_owner; // owner of the contract.
@@ -47,7 +48,7 @@ contract Staking {
     //////////////// Constructor //////////////////////////
     constructor(address _stakeToken, address _rewardToken) {
         s_stakeToken = IERC20(_stakeToken);
-        s_stakeToken = IERC20(_rewardToken);
+        s_rewardToken = IERC20(_rewardToken);
         i_owner = msg.sender;
     }
 
@@ -68,6 +69,9 @@ contract Staking {
         if (block.timestamp < s_finishedAt) {
             revert Staking__DurationNotFinishedYet();
         }
+        if(_duration <= 0 || _duration > type(uint256).max){
+            revert Staking__ShouldNotBeZero();
+        }
         s_duration = _duration;
         s_updatedAt = block.timestamp;
         s_finishedAt = block.timestamp + s_duration;
@@ -83,7 +87,12 @@ contract Staking {
         if (s_duration == 0) {
             revert Staking__SetsTheDurationFirst();
         }
+
         if (block.timestamp >= s_finishedAt) {
+            // should I need to do following check to prevent owner to  set reward according to previous time duration.
+            // if(s_updatedAt != block.timestamp){
+            //     revert Staking__DurationOutdated();
+            // }
             s_rewardRate = _amount / s_duration;
         } else {
             // e Using safeMath library is best practice, but the calculation of decimal precision here not so complicated.
@@ -140,7 +149,8 @@ contract Staking {
         s_stakedUserAmount[msg.sender] -= _amountToWithdraw;
         emit Unstaked(msg.sender, _amountToWithdraw);
         //External Interaction
-        s_stakeToken.transferFrom(address(this), msg.sender, _amountToWithdraw);
+        // Can use transferFrom.
+        s_stakeToken.transfer(msg.sender, _amountToWithdraw);
     }
 
     /**
@@ -159,8 +169,9 @@ contract Staking {
             revert Staking__ShouldNotBeZero();
         }
         emit RewardsClaimed(msg.sender, reward);
+
         //Interactions
-        s_rewardToken.transferFrom(address(this), msg.sender, reward);
+        s_rewardToken.transfer(msg.sender, reward);
     }
 
     // Calculate the reward based on reward per second.
@@ -183,7 +194,7 @@ contract Staking {
                 amountStaked * (block.timestamp - s_userRewardUpdatedAt[_account]) * s_rewardPerSecond / PRECISION;
 
             s_userRewardUpdatedAt[_account] = block.timestamp;
-        }
+        } 
     }
 
     /**
@@ -193,8 +204,44 @@ contract Staking {
     function getReward(address _account) public view returns (uint256) {
         return s_rewards[_account];
     }
-
+    
+    function getUserRewardUpdatedAt(address _account) public view returns (uint256) {
+        return s_userRewardUpdatedAt[_account];
+    }
+    
     function getStakedAmount(address _account) public view returns (uint256) {
         return s_stakedUserAmount[_account];
+    }
+
+    function getOwner() public view returns (address) {
+        return i_owner;
+    }
+
+    function getStakeToken() public view returns (address) {
+        return address(s_stakeToken);
+    }
+
+    function getRewardToken() public view returns (address) {
+        return address(s_rewardToken);
+    }
+
+    function getStakingFinishedAt() public view returns (uint256) {
+        return s_finishedAt;
+    }
+
+    function getDuration() public view returns (uint256) {
+        return s_duration;
+    }
+
+    function getRewardRate() public view returns (uint256) {
+        return s_rewardRate;
+    }
+
+    function getRewardPerSecond() public view returns (uint256) {
+        return s_rewardPerSecond;
+    }
+
+    function getStakedUserAmount(address user) public view returns (uint256) {
+        return s_stakedUserAmount[user];
     }
 }
