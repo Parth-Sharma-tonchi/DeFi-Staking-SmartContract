@@ -69,7 +69,7 @@ contract Staking {
         if (block.timestamp < s_finishedAt) {
             revert Staking__DurationNotFinishedYet();
         }
-        if(_duration <= 0 || _duration > type(uint256).max){
+        if (_duration <= 0 || _duration > type(uint256).max) {
             revert Staking__ShouldNotBeZero();
         }
         s_duration = _duration;
@@ -194,7 +194,7 @@ contract Staking {
                 amountStaked * (block.timestamp - s_userRewardUpdatedAt[_account]) * s_rewardPerSecond / PRECISION;
 
             s_userRewardUpdatedAt[_account] = block.timestamp;
-        } 
+        }
     }
 
     /**
@@ -204,11 +204,11 @@ contract Staking {
     function getReward(address _account) public view returns (uint256) {
         return s_rewards[_account];
     }
-    
+
     function getUserRewardUpdatedAt(address _account) public view returns (uint256) {
         return s_userRewardUpdatedAt[_account];
     }
-    
+
     function getStakedAmount(address _account) public view returns (uint256) {
         return s_stakedUserAmount[_account];
     }

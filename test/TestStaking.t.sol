@@ -11,7 +11,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract TestStaking is Test {
-    DeployStaking public deployer;
+    DeployStaking public deployContract;
     Staking public staking;
     address public stakingaddress;
     address public stakeToken;
@@ -26,9 +26,9 @@ contract TestStaking is Test {
     event AmountStaked(address indexed user, uint256 amount);
     event Unstaked(address indexed user, uint256 amountToWithdraw);
 
-    function setUp() external {
-        deployer = new DeployStaking();
-        (stakingaddress, stakeToken, rewardToken) = deployer.run();
+    function setUp() public {
+        deployContract = new DeployStaking();
+        (stakingaddress, stakeToken, rewardToken) = deployContract.run();
         staking = Staking(stakingaddress);
         vm.deal(user, STARTING_USER_BALANCE);
     }
@@ -43,7 +43,7 @@ contract TestStaking is Test {
     modifier setReward() {
         uint256 amount = 100e18;
         vm.startPrank(address(this));
-        IERC20(rewardToken).approve(address(staking), amount);
+        // IERC20(rewardToken).approve(address(staking), amount);
         staking.setReward(amount);
         vm.stopPrank();
         _;
@@ -52,7 +52,7 @@ contract TestStaking is Test {
     modifier staked() {
         uint256 amountToStake = 10e18;
         IERC20(stakeToken).approve(user, amountToStake);
-        IERC20(stakeToken).approve(staking.getOwner(), amountToStake);
+        IERC20(stakeToken).approve(address(staking), amountToStake);
         IERC20(stakeToken).transferFrom(address(this), user, amountToStake);
         uint256 startingUserBalance = IERC20(stakeToken).balanceOf(address(user));
         uint256 startingContractBalance = IERC20(stakeToken).balanceOf(address(staking));
